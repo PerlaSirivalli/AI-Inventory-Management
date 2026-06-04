@@ -6,6 +6,7 @@ from models import Base
 
 from routes.auth_routes import router as auth_router
 from routes.product_routes import router as product_router
+from routes.agent_routes import router as agent_router
 
 app = FastAPI()
 
@@ -21,7 +22,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth_router)
 app.include_router(product_router)
-
+app.include_router(agent_router)
 # Create database tables
 Base.metadata.create_all(bind=engine)
 

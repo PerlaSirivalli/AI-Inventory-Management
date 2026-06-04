@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-
+from sqlalchemy import func
 from database import SessionLocal
 from models import ProductDB, SaleDB
 
@@ -9,6 +9,8 @@ from auth import get_current_user
 from datetime import timedelta
 router = APIRouter()
 
+class AgentQuestion(BaseModel):
+    question: str
 
 class Product(BaseModel):
     name: str
@@ -72,7 +74,10 @@ def add_product(
 
 # Record sale
 @router.post("/sales")
-def add_sale(sale: Sale):
+def add_sale(
+    sale: Sale,
+    current_user: str = Depends(get_current_user)
+):
 
     db: Session = SessionLocal()
 
@@ -120,7 +125,11 @@ def add_sale(sale: Sale):
 
 # Get all products
 @router.get("/products")
-def get_products():
+def get_products(
+    current_user: str = Depends(
+        get_current_user
+    )
+):
 
     db: Session = SessionLocal()
 
@@ -144,7 +153,10 @@ def get_products():
 
 # Get product by ID
 @router.get("/products/{product_id}")
-def get_product_by_id(product_id: int):
+def get_product_by_id(
+    product_id: int,
+    current_user: str = Depends(get_current_user)
+):
 
     db: Session = SessionLocal()
 
@@ -176,14 +188,17 @@ def get_product_by_id(product_id: int):
 
 # Search product by name
 @router.get("/search")
-def search_product(name: str):
+def search_product(
+    name: str,
+    current_user: str = Depends(get_current_user)
+):
 
     db: Session = SessionLocal()
 
     try:
 
         products = db.query(ProductDB).filter(
-            ProductDB.name == name
+            ProductDB.name.ilike(f"%{name}%")
         ).all()
 
         result = []
@@ -290,7 +305,9 @@ def delete_product(
 from datetime import timedelta
 
 @router.get("/sales")
-def get_sales():
+def get_sales(
+    current_user: str = Depends(get_current_user)
+):
 
     db: Session = SessionLocal()
 

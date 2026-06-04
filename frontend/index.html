@@ -7,6 +7,15 @@
 </head>
 
 <body>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+
+    <h3 id="welcomeUser"></h3>
+
+    <button onclick="logout()">
+        Logout
+    </button>
+
+</div>
     <div class="header">
     <h1>Inventory Management Dashboard</h1>
 </div>
@@ -26,6 +35,22 @@
     <h3>Total Sales</h3>
     <p id="totalSales">0</p>
 </div>
+</div>
+<div class="card">
+
+    <h2>🤖 Inventory Agent</h2>
+
+    <input
+        type="text"
+        id="agentQuestion"
+        placeholder="Ask about inventory">
+
+    <button onclick="askAgent()">
+        Ask
+    </button>
+
+    <p id="agentResponse"></p>
+
 </div>
 <div class="card">
 
@@ -196,5 +221,4 @@
     <script src="script.js"></script>
 
 </body>
-
 </html>

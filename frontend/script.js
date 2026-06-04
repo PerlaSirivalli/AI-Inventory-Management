@@ -1,3 +1,9 @@
+const token = localStorage.getItem("token");
+
+if (!token) {
+    window.location.href = "login.html";
+}
+
 let allProducts = []
 let allSales = []
 async function addProduct() {
@@ -11,6 +17,8 @@ async function addProduct() {
             const productQuantity =
                 document.getElementById("quantity").value
 
+            const token = localStorage.getItem("token");
+
             const response = await fetch(
                 "http://127.0.0.1:8000/products",
                 {
@@ -18,7 +26,7 @@ async function addProduct() {
 
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJTaXJpIiwiZXhwIjoxNzgwMzA2MTUzfQ.cD3TYoHK5M__OQbxuazEEyBJAKiLtlGkPstt8XSpVP0"
+                        "Authorization": `Bearer ${token}`
                     },
 
                     body: JSON.stringify({
@@ -43,8 +51,17 @@ async function addProduct() {
 
 async function loadProducts() {
 
+    const token =
+        localStorage.getItem("token");
+
     const response = await fetch(
-        "http://127.0.0.1:8000/products"
+        "http://127.0.0.1:8000/products",
+        {
+            headers: {
+                Authorization:
+                    `Bearer ${token}`
+            }
+        }
     )
 
     const data = await response.json()
@@ -87,22 +104,24 @@ async function recordSale() {
             const quantitySold =
                 document.getElementById("quantitySold").value
 
-            const response = await fetch(
-                "http://127.0.0.1:8000/sales",
-                {
-                    method: "POST",
+            const token = localStorage.getItem("token");
 
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+const response = await fetch(
+    "http://127.0.0.1:8000/sales",
+    {
+        method: "POST",
 
-                    body: JSON.stringify({
-                        product_id: Number(productId),
-                        quantity_sold: Number(quantitySold)
-                    })
-                }
-            )
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
 
+        body: JSON.stringify({
+            product_id: Number(productId),
+            quantity_sold: Number(quantitySold)
+        })
+    }
+)
             const data = await response.json()
 
             console.log(data)
@@ -118,9 +137,16 @@ async function recordSale() {
         }
 async function loadSales() {
 
-    const response = await fetch(
-        "http://127.0.0.1:8000/sales"
-    )
+    const token = localStorage.getItem("token");
+
+const response = await fetch(
+    "http://127.0.0.1:8000/sales",
+    {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }
+)
 
     const data = await response.json()
 
@@ -157,8 +183,15 @@ async function searchProduct() {
     const name =
         document.getElementById("searchName").value
 
+    const token = localStorage.getItem("token");
+
     const response = await fetch(
-        `http://127.0.0.1:8000/search?name=${name}`
+        `http://127.0.0.1:8000/search?name=${name}`,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
     )
 
     const data = await response.json()
@@ -197,21 +230,23 @@ async function updateProduct() {
     document.getElementById("updateMessage").innerText =
         "Updating product..."
 
-    const response = await fetch(
-        `http://127.0.0.1:8000/products/${productId}`,
-        {
-            method: "PUT",
+    const token = localStorage.getItem("token");
 
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJTaXJpIiwiZXhwIjoxNzgwMzA2MTUzfQ.cD3TYoHK5M__OQbxuazEEyBJAKiLtlGkPstt8XSpVP0"
-            },
+const response = await fetch(
+    `http://127.0.0.1:8000/products/${productId}`,
+    {
+        method: "PUT",
 
-            body: JSON.stringify({
-    quantity: Number(productQuantity)
-})
-        }
-    )
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+
+        body: JSON.stringify({
+            quantity: Number(productQuantity)
+        })
+    }
+)
 
     const data = await response.json()
 
@@ -226,8 +261,15 @@ async function updateProduct() {
 }
 async function loadProductDropdown() {
 
+    const token = localStorage.getItem("token");
+
     const response = await fetch(
-        "http://127.0.0.1:8000/products"
+        "http://127.0.0.1:8000/products",
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
     )
 
     const data = await response.json()
@@ -253,8 +295,15 @@ async function loadProductDropdown() {
 }
 async function loadDeleteDropdown() {
 
+    const token = localStorage.getItem("token");
+
     const response = await fetch(
-        "http://127.0.0.1:8000/products"
+        "http://127.0.0.1:8000/products",
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
     )
 
     const data = await response.json()
@@ -294,17 +343,19 @@ async function deleteProduct() {
     document.getElementById("deleteMessage").innerText =
         "Deleting product..."
 
-    const response = await fetch(
-        `http://127.0.0.1:8000/products/${productId}`,
-        {
-            method: "DELETE",
+    const token = localStorage.getItem("token");
 
-            headers: {
-                "Authorization":
-                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJTaXJpIiwiZXhwIjoxNzgwMzA2MTUzfQ.cD3TYoHK5M__OQbxuazEEyBJAKiLtlGkPstt8XSpVP0"
-            }
+const response = await fetch(
+    `http://127.0.0.1:8000/products/${productId}`,
+    {
+        method: "DELETE",
+
+        headers: {
+            "Authorization":
+                `Bearer ${token}`
         }
-    )
+    }
+)
 
     const data = await response.json()
 
@@ -371,7 +422,59 @@ function updateLowStock(products) {
 
     })
 }
+async function askAgent() {
+
+    const question =
+        document.getElementById(
+            "agentQuestion"
+        ).value;
+
+    const token = localStorage.getItem("token");
+
+const response = await fetch(
+    "http://127.0.0.1:8000/agent",
+    {
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+
+        body: JSON.stringify({
+            question: question
+        })
+    }
+);
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "agentResponse"
+    ).innerHTML =
+        data.message
+            .replace(/\*\*/g, "");
+}
+function logout() {
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+
+    window.location.href = "login.html";
+}
+function showUsername() {
+
+    const username =
+        localStorage.getItem("username");
+
+    document.getElementById(
+        "welcomeUser"
+    ).innerText =
+        `Welcome, ${username} 👋`;
+}
 window.onload = function () {
+      showUsername();
     loadProducts()
     loadSales()
     loadProductDropdown()
