@@ -429,32 +429,47 @@ async function askAgent() {
             "agentQuestion"
         ).value;
 
-    const token = localStorage.getItem("token");
-
-const response = await fetch(
-    "http://127.0.0.1:8000/agent",
-    {
-        method: "POST",
-
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        },
-
-        body: JSON.stringify({
-            question: question
-        })
-    }
-);
-
-    const data =
-        await response.json();
+    const token =
+        localStorage.getItem("token");
 
     document.getElementById(
         "agentResponse"
     ).innerHTML =
-        data.message
-            .replace(/\*\*/g, "");
+        "🤖 Thinking...";
+
+    try {
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/agent",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+
+                body: JSON.stringify({
+                    question: question
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        document.getElementById(
+            "agentResponse"
+        ).innerHTML =
+            data.message.replace(/\*\*/g, "");
+
+    } catch {
+
+        document.getElementById(
+            "agentResponse"
+        ).innerHTML =
+            "⚠️ Unable to reach AI service.";
+    }
 }
 function logout() {
 

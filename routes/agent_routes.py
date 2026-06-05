@@ -7,14 +7,16 @@ from sqlalchemy.orm import Session
 from auth import get_current_user
 router = APIRouter()
 
+from dotenv import load_dotenv
 import os
 
+load_dotenv()
 genai.configure(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
 model = genai.GenerativeModel(
-    "gemini-2.5-flash"
+    "gemini-3.5-flash"
 )
 
 
@@ -34,6 +36,37 @@ def agent(
 
         products = db.query(ProductDB).all()
         sales = db.query(SaleDB).all()
+        sales_summary = {}
+
+        for sale in sales:
+
+            product = db.query(ProductDB).filter(
+                ProductDB.id == sale.product_id
+            ).first()
+
+            if product:
+
+                sales_summary[product.name] = (
+                    sales_summary.get(product.name, 0)
+                    + sale.quantity_sold
+                )
+        top_product = "No sales"
+
+        if sales_summary:
+
+            top_product = max(
+                sales_summary,
+                key=sales_summary.get
+            )
+        low_stock = []
+
+        for product in products:
+
+            if product.quantity <= 10:
+
+                low_stock.append(
+                    product.name
+                )
         inventory_data = ""
 
         for product in products:
@@ -59,9 +92,20 @@ def agent(
 
             sales_data += (
                 f"{product_name}: "
-                f"{sale.quantity_sold} sold\n"
+                f"{sale.quantity_sold} sold on"
+                f"{sale.sale_date}\n"
             )
+        question_text = question.question.lower()
 
+        if "top selling product" in question_text:
+            return {
+                "message": f"Top selling product is {top_product}"
+            }
+
+        if "low stock" in question_text:
+            return {
+                "message": f"Low stock products: {', '.join(low_stock)}"
+            }
         prompt = f"""
         You are an Inventory Management Assistant.
 
@@ -79,17 +123,34 @@ def agent(
         Sales Data:
         {sales_data}
 
+        Business Insights:
+
+        Top Selling Product:
+        {top_product}
+
+        Low Stock Products:
+        {low_stock}
         Question:
         {question.question}
         """
 
-        response = model.generate_content(
-            prompt
-        )
+        try:
 
-        return {
-            "message": response.text
+            response = model.generate_content(
+                prompt
+            )
+
+            return {
+                "message": response.text
+            }
+
+        except Exception as e:
+
+            print("GEMINI ERROR:", e)
+
+            return {
+                "message": str(e)
         }
 
     finally:
-        db.close()
+            db.close()
