@@ -51,48 +51,47 @@ async function addProduct() {
 
 async function loadProducts() {
 
-    const token =
-        localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
     const response = await fetch(
         "http://127.0.0.1:8000/products",
         {
             headers: {
-                Authorization:
-                    `Bearer ${token}`
+                Authorization: `Bearer ${token}`
             }
         }
-    )
+    );
 
-    const data = await response.json()
+    const data = await response.json();
 
-    allProducts = data.products
-    
-    updateStats(allProducts, allSales)
+    allProducts = data.products;
 
-    updateLowStock(allProducts)
+    updateStats(allProducts, allSales);
 
-    console.log(data)
+    updateLowStock(allProducts);
 
-    const tableBody =
-        document.getElementById("productTableBody")
+    // Inventory table exists only on manual.html
+    const tableBody = document.getElementById("productTableBody");
 
-    tableBody.innerHTML = ""
+    if (!tableBody) {
+        return;
+    }
+
+    tableBody.innerHTML = "";
 
     data.products.forEach(product => {
 
-        const row =
-            document.createElement("tr")
+        const row = document.createElement("tr");
 
         row.innerHTML = `
             <td>${product.id}</td>
             <td>${product.name}</td>
             <td>${product.quantity}</td>
-        `
+        `;
 
-        tableBody.appendChild(row)
+        tableBody.appendChild(row);
 
-    })
+    });
 }
 
 async function recordSale() {
@@ -139,43 +138,44 @@ async function loadSales() {
 
     const token = localStorage.getItem("token");
 
-const response = await fetch(
-    "http://127.0.0.1:8000/sales",
-    {
-        headers: {
-            Authorization: `Bearer ${token}`
+    const response = await fetch(
+        "http://127.0.0.1:8000/sales",
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
         }
+    );
+
+    const data = await response.json();
+
+    allSales = data.sales;
+
+    updateStats(allProducts, allSales);
+
+    // Sales table exists only on manual.html
+    const tableBody = document.getElementById("salesTableBody");
+
+    if (!tableBody) {
+        return;
     }
-)
 
-    const data = await response.json()
-
-    allSales = data.sales
-
-    updateStats(allProducts, allSales)
-
-    console.log(data)
-
-    const tableBody =
-        document.getElementById("salesTableBody")
-
-    tableBody.innerHTML = ""
+    tableBody.innerHTML = "";
 
     data.sales.forEach(sale => {
 
-        const row =
-            document.createElement("tr")
+        const row = document.createElement("tr");
 
         row.innerHTML = `
             <td>${sale.id}</td>
             <td>${sale.product_name}</td>
             <td>${sale.quantity_sold}</td>
             <td>${sale.sale_date}</td>
-        `
+        `;
 
-        tableBody.appendChild(row)
+        tableBody.appendChild(row);
 
-    })
+    });
 
 }
 async function searchProduct() {
@@ -273,7 +273,8 @@ async function loadProductDropdown() {
     )
 
     const data = await response.json()
-
+    console.log(data);
+    console.log(data.products.length);
     const dropdown =
         document.getElementById("updateProductId")
 
@@ -369,33 +370,43 @@ const response = await fetch(
 
 function updateStats(products, sales) {
 
-    document.getElementById("totalProducts").innerText =
-        products.length
+    const totalProducts = document.getElementById("totalProducts");
+    const totalStock = document.getElementById("totalStock");
+    const totalSales = document.getElementById("totalSales");
 
-    let totalStock = 0
+    // If dashboard cards don't exist (manual.html), do nothing.
+    if (!totalProducts || !totalStock || !totalSales) {
+        return;
+    }
+
+    totalProducts.innerText = products.length;
+
+    let stock = 0;
 
     products.forEach(product => {
-        totalStock += product.quantity
-    })
+        stock += product.quantity;
+    });
 
-    document.getElementById("totalStock").innerText =
-        totalStock
+    totalStock.innerText = stock;
 
-    let totalSales = 0
+    let salesCount = 0;
 
     sales.forEach(sale => {
-        totalSales += sale.quantity_sold
-    })
+        salesCount += sale.quantity_sold;
+    });
 
-    document.getElementById("totalSales").innerText =
-        totalSales
+    totalSales.innerText = salesCount;
 }
 function updateLowStock(products) {
 
     const container =
-        document.getElementById("lowStockContainer")
+    document.getElementById("lowStockContainer");
 
-    container.innerHTML = ""
+if (!container) {
+    return;
+}
+
+container.innerHTML = "";
 
     const lowStockProducts =
         products.filter(product => product.quantity <= 10)
@@ -403,7 +414,7 @@ function updateLowStock(products) {
     if (lowStockProducts.length === 0) {
 
         container.innerHTML =
-            "✅ No low stock products"
+            " No low stock products"
 
         return
     }
@@ -425,17 +436,47 @@ function updateLowStock(products) {
 async function askAgent() {
 
     const question =
-        document.getElementById(
-            "agentQuestion"
-        ).value;
+        document.getElementById("agentQuestion").value.trim();
+
+    if (question === "") return;
 
     const token =
         localStorage.getItem("token");
 
-    document.getElementById(
-        "agentResponse"
-    ).innerHTML =
-        "🤖 Thinking...";
+    const chatArea =
+        document.getElementById("chatArea");
+
+    const askButton =
+        document.querySelector("button[onclick='askAgent()']");
+
+    // Disable button
+    askButton.disabled = true;
+    askButton.innerText = "Thinking...";
+
+    // User message
+    chatArea.innerHTML += `
+        <div class="user-message">
+            ${question}
+        </div>
+    `;
+
+    // AI Thinking message
+    chatArea.innerHTML += `
+        <div class="ai-message">
+            Thinking...
+        </div>
+    `;
+
+    // Scroll to latest message
+    chatArea.scrollTop = chatArea.scrollHeight;
+
+    // Clear input
+    document.getElementById("agentQuestion").value = "";
+    document.getElementById("agentQuestion").focus();
+
+    // Latest AI message
+    const aiMessage =
+        chatArea.querySelector(".ai-message:last-child");
 
     try {
 
@@ -443,32 +484,36 @@ async function askAgent() {
             "http://127.0.0.1:8000/agent",
             {
                 method: "POST",
-
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-
                 body: JSON.stringify({
                     question: question
                 })
             }
         );
 
-        const data =
-            await response.json();
+        const data = await response.json();
 
-        document.getElementById(
-            "agentResponse"
-        ).innerHTML =
+        aiMessage.innerHTML =
             data.message.replace(/\*\*/g, "");
 
-    } catch {
+    } catch (error) {
 
-        document.getElementById(
-            "agentResponse"
-        ).innerHTML =
-            "⚠️ Unable to reach AI service.";
+        aiMessage.innerHTML =
+            "Unable to process your request. Please try again.";
+
+        console.error(error);
+
+    } finally {
+
+        // Enable button again
+        askButton.disabled = false;
+        askButton.innerText = "Ask AI";
+
+        // Scroll after response
+        chatArea.scrollTop = chatArea.scrollHeight;
     }
 }
 function logout() {
@@ -480,18 +525,34 @@ function logout() {
 }
 function showUsername() {
 
-    const username =
-        localStorage.getItem("username");
+    const username = localStorage.getItem("username");
 
-    document.getElementById(
-        "welcomeUser"
-    ).innerText =
-        `Welcome, ${username} 👋`;
+    document.getElementById("welcomeUser").innerText = username;
 }
-window.onload = function () {
-      showUsername();
-    loadProducts()
-    loadSales()
-    loadProductDropdown()
-     loadDeleteDropdown()
+window.onload = async function () {
+
+    showUsername();
+
+    await loadProducts();
+    await loadSales();
+
+    if (document.getElementById("updateProductId")) {
+        await loadProductDropdown();
+    }
+
+    if (document.getElementById("deleteProductId")) {
+        await loadDeleteDropdown();
+    }
+
 }
+function fillPrompt(text) {
+    document.getElementById("agentQuestion").value = text;
+    document.getElementById("agentQuestion").focus();
+}
+document.getElementById("agentQuestion").addEventListener("keypress", function(event) {
+
+    if (event.key === "Enter") {
+        askAgent();
+    }
+
+});

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Inventory Agent</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+
+    <div class="logo">
+        <h2>AI Inventory Management</h2>
+    </div>
+
+    <div class="nav-links">
+        <a href="index.html">AI Workspace</a>
+        <a href="manual.html" class="active">Manual Operations</a>
+    </div>
+
+    <div class="user-section">
+        <span id="welcomeUser"></span>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+</nav>
+    <div class="header">
+    <h1>Manual Operations</h1>
+</div>
+
+<div class="top-cards">
+    <div class="card">
+
+        <h1>Add Product</h1>
+
+        <input
+            type="text"
+            id="name"
+            placeholder="Product Name">
+
+        <br>
+
+        <input
+            type="number"
+            id="quantity"
+            min="1"
+            placeholder="Quantity">
+
+        <br>
+
+        <button onclick="addProduct()">
+            Add Product
+        </button>
+
+        <p id="productMessage"></p>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Record Sale</h2>
+
+        <input
+            type="number"
+            id="productId"
+            min="1"
+            placeholder="Product ID">
+
+        <br>
+
+        <input
+            type="number"
+            id="quantitySold"
+            min="1"
+            placeholder="Quantity Sold">
+
+        <br>
+
+        <button onclick="recordSale()">
+            Record Sale
+        </button>
+
+        <p id="saleMessage"></p>
+
+    </div>
+</div>
+   <div class="card">
+
+    <h2>Search Product</h2>
+
+    <div class="management-row">
+
+        <input
+            type="text"
+            id="searchName"
+            placeholder="Enter product name">
+
+        <button onclick="searchProduct()">
+            Search
+        </button>
+
+    </div>
+
+    <p id="searchMessage"></p>
+
+</div>
+<div class="card">
+
+    <h2>Update Product</h2>
+
+    <div class="management-row">
+
+        <select id="updateProductId"></select>
+
+        <input
+            type="number"
+            id="updateProductQuantity"
+            min="1"
+            placeholder="New Quantity">
+
+        <button onclick="updateProduct()">
+            Update Product
+        </button>
+
+    </div>
+
+    <p id="updateMessage"></p>
+
+</div>
+<div class="card">
+
+    <h2>Delete Product</h2>
+
+    <div class="management-row">
+
+        <select id="deleteProductId"></select>
+
+        <button class="delete-btn" onclick="deleteProduct()">
+            Delete Product
+        </button>
+
+    </div>
+
+    <p id="deleteMessage"></p>
+
+</div>
+    <script src="script.js"></script>
+
+</body>
+</html>

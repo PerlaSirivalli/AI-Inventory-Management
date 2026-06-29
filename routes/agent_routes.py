@@ -98,7 +98,6 @@ def agent(
                 f"{sale.sale_date}\n"
             )
         question_text = question.question.lower()
-
         if "top selling product" in question_text:
             return {
                 "message": f"Top selling product is {top_product}"
@@ -120,6 +119,7 @@ Possible actions:
 - UPDATE_PRODUCT
 - DELETE_PRODUCT
 - RECORD_SALE
+- SHOW_INVENTORY
 
 If the user wants to perform one of the above actions, return ONLY JSON in this format:
 
@@ -160,7 +160,11 @@ For RECORD_SALE:
     "product": "Rice",
     "quantity": 5
 }}
+For SHOW_INVENTORY:
 
+{{
+    "action": "SHOW_INVENTORY"
+}}
 If the user is only asking a question, then answer normally in plain English.
 
 Rules:
@@ -195,146 +199,75 @@ User Request:
             try:
                 ai_response = json.loads(response.text)
             except:
-                return {
-                    "message": response.text
-                }
+                return {"message": response.text}
+
             action = ai_response.get("action")
+
             if action == "ADD_PRODUCT":
-
                 product_name = ai_response.get("product")
                 quantity = ai_response.get("quantity")
-
-    # Check if product already exists
-                existing_product = db.query(ProductDB).filter(
-                    ProductDB.name == product_name
-                ).first()
-
+                existing_product = db.query(ProductDB).filter(func.lower(ProductDB.name)==product_name.lower()).first()
                 if existing_product:
+                    existing_product.quantity += quantity
+                    db.commit()
+                    return {"message": f"<b>Product updated successfully.</b><br><br><b>Product:</b> {product_name}<br><b>Quantity Added:</b> {quantity}<br><b>Current Stock:</b> {existing_product.quantity}"}
+                new_product=ProductDB(name=product_name,quantity=quantity)
+                db.add(new_product); db.commit()
+                return {"message": f"<b>Product added successfully.</b><br><br><b>Product:</b> {product_name}<br><b>Initial Stock:</b> {quantity}"}
 
-                     existing_product.quantity += quantity
-
-                     db.commit()
-
-                     return {
-                        "message": f"✅ {quantity} units added to {product_name}. Current stock: {existing_product.quantity}"
-                    }
-
-    # Create new product
-                new_product = ProductDB(
-                    name=product_name,
-                    quantity=quantity
-                )
-
-                db.add(new_product)
-                db.commit()
-
-                return {
-                    "message": f"✅ {product_name} added successfully with quantity {quantity}."
-                }
-            
-            if action == "UPDATE_PRODUCT":
-
-                product_name = ai_response.get("product")
-                quantity = ai_response.get("quantity")
-
-                product = db.query(ProductDB).filter(
-                func.lower(ProductDB.name) == product_name.lower()
-                ).first()
-
+            if action=="UPDATE_PRODUCT":
+                product_name=ai_response.get("product")
+                quantity=ai_response.get("quantity")
+                product=db.query(ProductDB).filter(func.lower(ProductDB.name)==product_name.lower()).first()
                 if not product:
-
-                    return {
-                        "message": f"❌ Product '{product_name}' not found."
-                    }
-
-                product.quantity = quantity
-
+                    return {"message": f"<b>Product not found.</b><br><br><b>Product:</b> {product_name}"}
+                product.quantity=quantity
                 db.commit()
+                return {"message": f"<b>Product updated successfully.</b><br><br><b>Product:</b> {product_name}<br><b>Current Stock:</b> {quantity}"}
 
-                return {
-                    "message": f"✅ {product_name} stock updated to {quantity}."
-                }
+            if action=="RECORD_SALE":
+                product_name=ai_response.get("product")
+                quantity=int(ai_response.get("quantity"))
+                product=db.query(ProductDB).filter(func.lower(ProductDB.name)==product_name.lower()).first()
+                if not product:
+                    return {"message": f"<b>Product not found.</b><br><br><b>Product:</b> {product_name}"}
+                if product.quantity<quantity:
+                    return {"message": f"<b>Insufficient stock.</b><br><br><b>Available Stock:</b> {product.quantity}"}
+                db.add(SaleDB(product_id=product.id,quantity_sold=quantity))
+                product.quantity-=quantity
+                db.commit()
+                return {"message": f"<b>Sale recorded successfully.</b><br><br><b>Product:</b> {product_name}<br><b>Quantity Sold:</b> {quantity}<br><b>Remaining Stock:</b> {product.quantity}"}
+            if action == "SHOW_INVENTORY":
 
-            if action == "RECORD_SALE":
+                message = "<b>Current Inventory</b><br><br>"
 
-                    product_name = ai_response.get("product")
-                    quantity = int(ai_response.get("quantity"))
+                for product in products:
 
-    # Find product
-                    product = db.query(ProductDB).filter(
-                        func.lower(ProductDB.name) == product_name.lower()
-                    ).first()
-
-                    if not product:
-                        return {
-                            "message": f"❌ Product '{product_name}' not found."
-                        }
-
-    # Check stock
-                    if product.quantity < quantity:
-                        return {
-                            "message": f"❌ Not enough stock. Available stock: {product.quantity}"
-                        }
-
-    # Create sale
-                    new_sale = SaleDB(
-                        product_id=product.id,
-                        quantity_sold=quantity
+                    message += (
+                        f"<b>{product.name}</b>: "
+                        f"{product.quantity}<br>"
                     )
 
-                    db.add(new_sale)
-
-    # Reduce inventory
-                    product.quantity -= quantity
-
-                    db.commit()
-
-                    return {
-                        "message": f"✅ Sale of {quantity} {product_name} recorded successfully."
-                    }
-            if action == "DELETE_PRODUCT":
-
-                product_name = ai_response.get("product")
-                confirm = ai_response.get("confirm", False)
-
-                product = db.query(ProductDB).filter(
-                    ProductDB.name == product_name
-                ).first()
-
+                return {
+                    "message": message
+                }
+            if action=="DELETE_PRODUCT":
+                product_name=ai_response.get("product")
+                confirm=ai_response.get("confirm",False)
+                product=db.query(ProductDB).filter(func.lower(ProductDB.name)==product_name.lower()).first()
                 if not product:
-                    return {
-                        "message": f"❌ Product '{product_name}' not found."
-                    }
-
+                    return {"message": f"<b>Product not found.</b><br><br><b>Product:</b> {product_name}"}
                 if not confirm:
-                    return {
-                        "message":
-                f"""⚠️ Product Found
+                    return {"message": f"<b>Delete Confirmation Required</b><br><br><b>Product:</b> {product.name}<br><b>Current Stock:</b> {product.quantity}<br><br>Type <b>YES DELETE {product.name}</b> to confirm deletion."}
+                db.delete(product); db.commit()
+                return {"message": f"<b>Product deleted successfully.</b><br><br><b>Product:</b> {product.name}"}
 
-Name: {product.name}
-Current Stock: {product.quantity}
+            return {"message": response.text}
 
-Type:
-YES DELETE {product.name}
-
-to confirm deletion."""
-        }
-
-            db.delete(product)
-            db.commit()
-
-            return {
-                "message": f"✅ {product.name} deleted successfully."
-            }
         except Exception as e:
-
             import traceback
-
             traceback.print_exc()
-
-            return {
-                "message": str(e)
-            }
+            return {"message": str(e)}
 
     finally:
-            db.close()
+        db.close()
